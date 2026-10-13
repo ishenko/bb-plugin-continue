@@ -118,6 +118,27 @@ describe("Continue placement", () => {
     expect(native.hasAttribute("data-bb-continue-secondary-mic")).toBe(false);
     expect(wrapper.hasAttribute("data-bb-continue-hidden")).toBe(true);
   });
+  it.each([false, true])("keeps the mic left of Continue after React replaces the primary control (compact=%s)", async (compact) => {
+    mobile = true;
+    const { wrapper, form } = fixture("Mic", false);
+    if (compact) form.setAttribute("data-promptbox-compact", "");
+    const group = wrapper.parentElement!;
+    const host = group.querySelector<HTMLElement>(".bb-continue-host")!;
+    wrapper.remove();
+    const replacement = document.createElement("span");
+    const microphone = document.createElement("button");
+    microphone.type = "button";
+    microphone.setAttribute("data-promptbox-submit-action", "");
+    microphone.innerHTML = '<svg data-icon="Mic"></svg>';
+    replacement.append(microphone);
+    group.append(replacement);
+    await flush();
+    expect(Array.from(group.children)).toEqual([replacement, host]);
+    expect(microphone.hasAttribute("data-bb-continue-secondary-mic")).toBe(true);
+    expect(group.querySelectorAll(".bb-continue-host")).toHaveLength(1);
+    await flush();
+    expect(frame).toBeUndefined();
+  });
   it("reacts to a change in pointer/viewport mode", async () => {
     mobile = true;
     const { native } = fixture("Mic", false);

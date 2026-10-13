@@ -78,7 +78,8 @@ export function mountContinuePlacement(
       const sendChrome = native.closest<HTMLElement>("[data-promptbox-send-menu]") ?? native.parentElement!;
       mark(sendChrome, HIDDEN);
     }
-    if (host.parentElement !== group) group.append(host);
+    // React can insert a rebuilt microphone after our portal in the same group.
+    if (group.lastElementChild !== host) group.append(host);
     if (!mounted) {
       mounted = true;
       onHost(host);
