@@ -25,10 +25,9 @@ bb nudge thr_abc123 --reason "transient provider overload" --json
 
 ## From the BB app
 
-With an empty draft the Play (Nudge) button replaces send in the composer:
-press it to keep the agent going without typing. As soon as you type, the
-normal send button returns. The button is hidden while the thread is
-running and outside a thread.
+With an empty draft in an existing thread, press Continue (Play) to keep the agent going without typing. It is absent from the first-message composer, queued-message editors, and running threads. Typing or adding attachments restores Send.
+
+On mobile touch viewports below 768px, Continue takes the primary microphone position. The original microphone stays immediately to its left with the same secondary appearance used for a typed draft, including its recording handlers and voice preferences. Recording temporarily hides Continue. Both expanded and collapsed thread composers are supported. Desktop retains the normal microphone and compact Continue button.
 
 ## What it does
 

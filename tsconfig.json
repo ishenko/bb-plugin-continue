@@ -23,6 +23,8 @@
   "include": [
     "server.ts",
     "app.tsx",
+    "placement.ts",
+    "test",
     "components",
     "lib",
     "hooks"

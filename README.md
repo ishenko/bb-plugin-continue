@@ -1,62 +1,57 @@
-<p align="center">
-  <h3 align="center">Nudge for <a href="https://getbb.app/">BB</a></h3>
-  <p align="center">
-    Replaces Send on an empty composer with Play, so the agent continues without a user message.
-    <br><br>
-    <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" />
-    <a href="https://github.com/e-simpson/bb-plugin-nudge"><img src="https://img.shields.io/github/stars/e-simpson/bb-plugin-nudge" alt="GitHub stars"></a>
-  </p>
-</p>
+---
+title: Continue for BB
+status: ready
+updated: 2026-10-13
+tags: [bb-plugin, composer, mobile]
+---
 
-<img src="./images/screenshot.png" alt="Empty BB composer with the Nudge play button where Send usually is" />
+# Continue for BB
 
-### Features
-- ▶️ Play replaces Send while the composer draft is empty
-- 🙈 Hidden continuation on idle threads — no `Continue.` bubble in the timeline
-- 🔁 Failed turns retry by reference, like `bb thread retry`
-- 🛑 Hidden while the agent is running, so Stop owns the row
-- ⌨️ `bb nudge` from a terminal or agent shell
+Fork of [e-simpson/bb-plugin-nudge](https://github.com/e-simpson/bb-plugin-nudge), distributed under the original MIT license.
 
-### Install via BB
-1. Open BB
-2. Plugins → search **Nudge** → Install
+| Composer | Behavior |
+| --- | --- |
+| First message / new thread | No Continue button |
+| Existing idle or failed thread, empty draft | Continue without a new user bubble |
+| Mobile touch viewport below 768px | Large primary Continue; original microphone beside it in its secondary style |
+| Desktop | Compact Continue beside the unchanged microphone |
+| Typed text, mentions, or attachments | Native Send |
+| Running thread or active voice recording | Native Stop / recording controls |
+| Queued-message editor | No Continue button |
 
-Or from a terminal:
+Expanded and collapsed follow-up composers are supported. The original microphone is not cloned or moved: its recording and voice-preferences handlers stay intact. Plugin removal restores the native controls.
 
-```bash
-bb plugin install git:https://github.com/e-simpson/bb-plugin-nudge.git@semver:^0.1.0
+> [!NOTE]
+> The placement uses BB's `data-promptbox-*` DOM markers because the public composer API does not provide a primary-action replacement. If those markers disappear, the plugin leaves the native controls alone.
+
+## Install
+
+Disable or remove the original Nudge plugin before installing this fork: both provide `bb nudge`.
+
+```sh
+git clone https://github.com/ishenko/bb-plugin-continue.git
+cd bb-plugin-continue
+npm install --include=dev
+npm run build
+bb plugin install . --yes
 ```
 
-### Manual Installation
-1. Clone this repository
-2. `cd bb-plugin-nudge`
-3. `npm install --include=dev`
-4. `bb plugin install . --yes`
+## Verify
 
-### Usage
-Leave the composer empty and press Play. Typing brings Send back.
+```sh
+npm run typecheck
+npm test
+npm run build
+```
 
-From a terminal, inside a BB thread:
+## Command
 
-```bash
+The original CLI and backend behavior remain compatible:
+
+```sh
 bb nudge
-```
-
-Target another thread, or explain a retry:
-
-```bash
 bb nudge thr_abc123
 bb nudge thr_abc123 --reason "transient provider overload" --json
 ```
 
-`--message` is optional and visible. The default idle nudge stays hidden.
-
-### What it does
-- **Idle thread:** starts a turn with an agent-only continuation (no user bubble)
-- **Errored thread:** retries the failed turn by reference (no new bubble)
-- **Busy thread:** refused until the thread settles
-
-No account, API key, or network access.
-
-### License
-MIT
+Idle threads receive an agent-only `Please continue.` input. Failed turns retry by reference. Busy threads are refused. An explicit `--message` remains visible, as in the upstream plugin. No additional account or API key is required.

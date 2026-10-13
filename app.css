@@ -1,0 +1,70 @@
+[data-bb-continue-hidden] {
+  display: none !important;
+}
+
+.bb-continue-host {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-left: 4px;
+}
+
+.bb-continue-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  cursor: pointer;
+}
+
+.bb-continue-button [data-icon-root] {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.bb-continue-button:hover {
+  opacity: 0.9;
+}
+
+.bb-continue-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.bb-continue-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 767px) and (pointer: coarse) {
+  .bb-continue-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .bb-continue-button [data-icon-root] {
+    width: 22px;
+    height: 22px;
+  }
+
+  [data-bb-continue-secondary-mic] {
+    margin-left: 0 !important;
+    background: transparent !important;
+    color: var(--foreground) !important;
+  }
+
+  [data-bb-continue-secondary-mic]:hover {
+    background: var(--state-hover) !important;
+  }
+
+  [data-promptbox-compact][data-bb-continue-active] [data-promptbox-input-region] {
+    padding-right: 44px;
+  }
+}
