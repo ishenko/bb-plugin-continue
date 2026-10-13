@@ -31,7 +31,18 @@ export function ContinueControl() {
     inFlight.current = true;
     setPending(true);
     try {
-      await rpc.call("nudge", { threadId });
+      const selection = composer.selection ?? {};
+      const execution = {
+        ...(selection.providerId ? { providerId: selection.providerId } : {}),
+        ...(selection.model ? { model: selection.model } : {}),
+        ...(selection.reasoningLevel ? { reasoningLevel: selection.reasoningLevel } : {}),
+        ...(selection.serviceTier ? { serviceTier: selection.serviceTier } : {}),
+        ...(selection.permissionMode ? { permissionMode: selection.permissionMode } : {}),
+      };
+      await rpc.call("nudge", {
+        threadId,
+        ...(Object.keys(execution).length > 0 ? { execution } : {}),
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {

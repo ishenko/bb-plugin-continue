@@ -31,8 +31,9 @@ On mobile touch viewports below 768px, Continue takes the primary microphone pos
 
 ## What it does
 
-- Errored thread: retries the failed turn by reference, exactly like
+- CLI on an errored thread: retries the failed turn by reference, exactly like
   `bb thread retry`. No new user bubble appears.
+- The Continue button uses the composer's current execution settings. After a failed turn, changing these settings starts a new attempt with them; an input the provider never accepted is replayed without a duplicate user bubble. Unchanged settings retain retry-by-reference.
 - Idle thread: starts a turn with a hidden continuation (no user bubble).
 - Busy thread (active, starting, stopping, pending): refused with an error.
   Wait until the thread settles, then nudge again.

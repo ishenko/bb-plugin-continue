@@ -54,4 +54,4 @@ bb nudge thr_abc123
 bb nudge thr_abc123 --reason "transient provider overload" --json
 ```
 
-Idle threads receive an agent-only `Please continue.` input. Failed turns retry by reference. Busy threads are refused. An explicit `--message` remains visible, as in the upstream plugin. No additional account or API key is required.
+The Continue button uses the model, reasoning level, service tier, and permission mode currently selected in its composer. Idle threads receive an agent-only `Please continue.` input. Failed turns retry by reference when the execution settings are unchanged; changing them starts a new turn with the selected settings, replaying the original input only if the provider never accepted it. Busy threads are refused. The CLI retains the thread's existing settings when no composer is involved. An explicit `--message` remains visible, as in the upstream plugin. No additional account or API key is required.

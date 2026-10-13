@@ -11,6 +11,14 @@ import { z } from "zod";
 // Hidden from the timeline; the provider still receives it so the turn starts.
 export const NUDGE_TEXT = "Please continue.";
 
+const executionSchema = z.object({
+  providerId: z.string().trim().min(1).optional(),
+  model: z.string().trim().min(1).optional(),
+  reasoningLevel: z.enum(["none", "low", "medium", "high", "max", "ultra", "ultracode", "xhigh"]).optional(),
+  serviceTier: z.string().trim().min(1).optional(),
+  permissionMode: z.enum(["accept-edits", "auto", "full"]).optional(),
+}).strict();
+
 export const rpcContract = defineRpcContract({
   nudge: {
     input: z
@@ -18,6 +26,7 @@ export const rpcContract = defineRpcContract({
         threadId: z.string().trim().min(1),
         message: z.string().trim().min(1).max(2000).optional(),
         reason: z.string().trim().min(1).max(500).optional(),
+        execution: executionSchema.optional(),
       })
       .strict(),
     output: z
@@ -46,20 +55,48 @@ function deliveryOf(value: unknown): string {
 
 async function nudgeThread(
   bb: BbPluginApi,
-  args: { threadId: string; message?: string; reason?: string },
+  args: { threadId: string; message?: string; reason?: string; execution?: z.infer<typeof executionSchema> },
 ): Promise<NudgeResult> {
   const threadId = args.threadId.trim();
   if (threadId === "") throw new Error("threadId is required.");
   const thread = await bb.sdk.threads.get({ threadId });
+  const { providerId, ...execution } = args.execution ?? {};
+  if (providerId !== undefined && providerId !== thread.providerId) {
+    throw new Error("Continue cannot switch providers. Send a message to use the selected provider.");
+  }
+  type SendInput = Parameters<typeof bb.sdk.threads.send>[0]["input"];
+  let failedInput: SendInput | undefined;
   const status: unknown = (thread as { status?: unknown }).status;
   if (status === "error") {
-    const reason = args.reason?.trim();
-    const result = await bb.sdk.threads.retry(
-      reason ? { threadId, reason } : { threadId },
-    );
-    return { action: "retried", delivery: deliveryOf(result), threadId };
+    const hasExecution = Object.values(execution).some((value) => value !== undefined);
+    const [failed] = hasExecution ? await bb.sdk.threads.events.list({
+      threadId, types: ["client/turn/requested"], order: "desc", limit: "1",
+    }) : [];
+    const changed = failed?.type === "client/turn/requested" &&
+      Object.entries(execution).some(([key, value]) => value !== undefined &&
+        value !== failed.data.execution[key as keyof typeof execution]);
+    if (changed && failed?.type === "client/turn/requested") {
+      // Core Retry intentionally replays the old execution tuple. A new choice
+      // requires a new turn, but an input never accepted must not be dropped.
+      const accepted = await bb.sdk.threads.events.list({
+        threadId, types: ["turn/input/accepted"], afterSeq: String(failed.seq), order: "asc", limit: "1",
+      });
+      const inputAccepted = accepted.some((event) => event.type === "turn/input/accepted" &&
+        event.data.clientRequestId === failed.data.requestId);
+      failedInput = inputAccepted
+        ? [{ type: "text", text: NUDGE_TEXT, mentions: [], visibility: "agent-only" }]
+        : failed.data.input.map((block) => ({ ...block, visibility: "agent-only" as const }));
+    } else {
+      const reason = args.reason?.trim();
+      const result = await bb.sdk.threads.retry({
+        threadId,
+        ...(reason ? { reason } : {}),
+        ...(failed?.type === "client/turn/requested" ? { turnRequestId: failed.data.requestId } : {}),
+      });
+      return { action: "retried", delivery: deliveryOf(result), threadId };
+    }
   }
-  if (status !== "idle") {
+  if (status !== "idle" && failedInput === undefined) {
     const name = typeof status === "string" ? status : "busy";
     throw new Error(
       "Thread is " + name + " — nudge only runs on idle or errored threads.",
@@ -70,7 +107,8 @@ async function nudgeThread(
   const sent = await bb.sdk.threads.send({
     threadId,
     mode: "auto",
-    input: [
+    ...execution,
+    input: failedInput ?? [
       visibility
         ? { type: "text", text, mentions: [], visibility }
         : { type: "text", text, mentions: [] },
@@ -123,8 +161,7 @@ export default async function plugin(bb: BbPluginApi) {
   bb.log.info("loaded");
 
   bb.rpc.register(rpcContract, {
-    nudge: ({ threadId, message, reason }) =>
-      nudgeThread(bb, { threadId, message, reason }),
+    nudge: (args) => nudgeThread(bb, args),
   });
 
   bb.cli.register({
